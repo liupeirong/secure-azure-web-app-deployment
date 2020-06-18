@@ -1,0 +1,39 @@
+# Infrastructure deployment deploys a environment in its initial state, if applicatons are already deployed,
+# they will be overwritten.  However, no databases or keyvaults will be overwritten.
+#
+# CI/PR Pipeline that deploys an ARM template to create or update the resources needed by the other pipelines.
+trigger: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- group: dev-infra-vg
+
+steps:
+- task: AzureResourceGroupDeployment@2
+  inputs:
+    azureSubscription: '$(AZURE_RM_SVC_CONNECTION)'
+    action: 'Create Or Update Resource Group'
+    resourceGroupName: '$(RESOURCE_GROUP)'
+    location: $(LOCATION)
+    templateLocation: 'Linked artifact'
+    csmFile: '$(Build.SourcesDirectory)/azuredeploy.json'
+    overrideParameters: '-environment dev
+                         -tag $(TAG)
+                         -webAppName $(WEBAPPNAME)
+                         -databasePassword $(DATABASE_PASSWORD)'
+    deploymentMode: 'Incremental'
+  displayName: 'Deploy a secured web site on Azure'
+
+- task: AzureCLI@2
+  displayName: Azure CLI Post Deploy Script
+  inputs:
+    azureSubscription: $(AZURE_RM_SVC_CONNECTION)
+    scriptType: bash
+    scriptPath: $(Build.SourcesDirectory)/postdeploy.sh
+  env:
+    RESOURCE_GROUP: $(RESOURCE_GROUP)
+    WEBAPPNAME: $(WEBAPPNAME)
+    TAG: $(TAG)
+  
