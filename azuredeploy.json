@@ -730,6 +730,10 @@
                                             },
                                             {
                                                 "headerName": "X-Powered-By"
+                                            },
+                                            {
+                                                "headerName": "Strict-Transport-Security",
+                                                "headerValue": "max-age=31536000"
                                             }
                                         ]
                                     }
@@ -760,6 +764,10 @@
                 "autoscaleConfiguration": {
                     "minCapacity": 2,
                     "maxCapacity": 5
+                },
+                "sslPolicy": {
+                    "policyType": "Predefined",
+                    "policyName": "AppGwSslPolicy20170401S"
                 },
                 "webApplicationFirewallConfiguration": {
                     "enabled": true,
