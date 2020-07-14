@@ -13,7 +13,7 @@ Note:
 
 ## How is it secured?
 The ARM template implements the following security measures:
-* [Azure SQL DB and Azure SQL Server firewalls](https://docs.microsoft.com/en-us/azure/sql-database/sql-database-firewall-configure) are configured to only allow the Web API [outbound IPs](https://docs.microsoft.com/en-us/azure/app-service/overview-inbound-outbound-ips#find-outbound-ips) to access the database.
+* [Azure SQL DB VNet Service Endpoints](https://docs.microsoft.com/en-us/azure/sql-database/sql-database-vnet-service-endpoint-rule-overview?toc=/azure/virtual-network/toc.json) - restricts access to SQL from only a virtual network (VNET). Combined with [Azure App Service VNet Integration](https://docs.microsoft.com/en-us/azure/app-service/web-sites-integrate-with-vnet), it restricts SQL Server to be only accessible from an App Service.
 * Azure Web App accesses SQL DB using [Managed Identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) (MSI).
 * [Azure App Service endpoints](https://docs.microsoft.com/en-us/azure/app-service/app-service-ip-restrictions#service-endpoints) are configured to only allow Azure Application Gateway to access the Web API.
 * Azure Application Gateway is configured for [end-to-end SSL](https://docs.microsoft.com/en-us/azure/application-gateway/end-to-end-ssl-portal) and [Web Application Firewall](https://docs.microsoft.com/en-us/azure/web-application-firewall/ag/ag-overview).
@@ -21,9 +21,7 @@ The ARM template implements the following security measures:
 
 Alternative solutions considered - 
 * [Azure Front Door](https://docs.microsoft.com/en-us/azure/frontdoor/front-door-overview) - can load balance across regions while Application Gateway can only load balance within a region. If there's no need for cross-region routing, Application Gateway has one IP address that can be used to lock down App Service. Front Door has a much wider range of outbound IP addresses. 
-* [Azure SQL DB VNet Service Endpoints](https://docs.microsoft.com/en-us/azure/sql-database/sql-database-vnet-service-endpoint-rule-overview?toc=/azure/virtual-network/toc.json) - restricts access to SQL from only a virtual network (VNET). Combined with [Azure App Service VNet Integration](https://docs.microsoft.com/en-us/azure/app-service/web-sites-integrate-with-vnet), it’s possible to restrict SQL Server to be only accessible from App Service.  It's not implemented in this sample because this feature is in preview for Linux App Service (May 2020). Also note that
-    * this feature is only supported on Premium V2 App Service Plan
-    * you need to run "DBCC FLUSHAUTHCACHE" to clear the cache of firewall on SQL
+* [Azure SQL DB and Azure SQL Server firewalls](https://docs.microsoft.com/en-us/azure/sql-database/sql-database-firewall-configure) can be configured to only allow the Web API [outbound IPs](https://docs.microsoft.com/en-us/azure/app-service/overview-inbound-outbound-ips#find-outbound-ips) to access the database. VNet Integration with Service Endpoints is a superior option because there's no need to enumerate the IPs and handle possible IP changes. 
 * [Azure App Service Private Endpoints](https://docs.microsoft.com/en-us/azure/app-service/networking/private-endpoint) - restricts access to App Service from only a VNet. However this is currently (Apr 2020) in Preview only in 2 regions. 
 * [Azure App Service Environment](https://docs.microsoft.com/en-us/azure/app-service/environment/intro) - places App Service in a VNet. This is a dedicated App Service SKU which could be an overkill for some websites.
 

@@ -54,6 +54,7 @@
         "dockerRegistryUrl": "https://index.docker.io",
         "virtualNetworkName": "[concat(parameters('tag'), 'vnet')]",
         "appGatewaySubnetName": "[concat(parameters('tag'), 'appgwsubnet')]",
+        "serviceEndpointSubnetName": "[concat(parameters('tag'), 'svcendpointsubnet')]",
         "appGatewayName": "[concat(parameters('tag'), 'appgw')]",
         "publicIpName": "[concat(parameters('tag'), 'appgwpip')]",
         "appInsightsName": "[concat(parameters('tag'), 'appinsights')]",
@@ -112,6 +113,30 @@
                                     ]
                                 }
                             ]
+                        }
+                    },
+                    {
+                        "name": "[variables('serviceEndpointSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "10.0.1.0/26",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.Sql",
+                                    "locations": [
+                                        "*"
+                                    ]
+                                }
+                            ],
+                            "delegations": [
+                                {
+                                    "name": "delegation",
+                                    "properties": {
+                                        "serviceName": "Microsoft.Web/serverfarms"
+                                    }
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
                         }
                     }
                 ]
@@ -388,6 +413,18 @@
                         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('microsoft.insights/components/', variables('appInsightsName'))).InstrumentationKey]",
                         "ManagedIdentity__TenantId": "[subscription().tenantId]",
                         "ManagedIdentity__ConnectionOption": "RunAs=App;"
+                    }
+                },
+                {
+                    "apiVersion": "2019-08-01",
+                    "name": "virtualNetwork",
+                    "type": "networkConfig",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', variables('backendWebAppName'))]"
+                    ],
+                    "properties": {
+                        "subnetResourceId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('virtualNetworkName'), variables('serviceEndpointSubnetName'))]",
+                        "swiftSupported": true
                     }
                 }
             ],
@@ -796,6 +833,18 @@
                 "administratorLogin": "[variables('databaseUsername')]",
                 "administratorLoginPassword": "[parameters('databasePassword')]",
                 "version": "12.0"
+            }
+        },
+        {
+            "type": "Microsoft.Sql/servers/virtualNetworkRules",
+            "apiVersion": "2015-05-01-preview",
+            "name": "[concat(variables('databaseServerName'), '/sqlAppsvcEndpointRule')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('databaseServerName'))]"
+            ],
+            "properties": {
+                "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets/', variables('virtualNetworkName'), variables('serviceEndpointSubnetName'))]",
+                "ignoreMissingVnetServiceEndpoint": false
             }
         }
     ]
